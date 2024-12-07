@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:todo_app/components/app_check_box.dart';
 import 'package:todo_app/constants/app_colors.dart';
 import 'package:todo_app/constants/app_images.dart';
 import 'package:todo_app/constants/app_text_style.dart';
+import 'package:todo_app/routing/routes.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -170,7 +172,9 @@ class _HomePageState extends State<HomePage> {
               child: Container(
                 color: AppColors.lightBackground,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    context.push(Routes.todoDetail);
+                  },
                   child: Text(
                     "Add New Task",
                     style: AppTextStyle.whiteBold.copyWith(fontSize: 16),

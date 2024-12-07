@@ -10,4 +10,9 @@ class AppTextStyle {
     fontWeight: FontWeight.bold,
     color: Colors.white,
   );
+
+  static const TextStyle blackSemiBold = TextStyle(
+    fontWeight: FontWeight.w600,
+    color: Colors.black,
+  );
 }
