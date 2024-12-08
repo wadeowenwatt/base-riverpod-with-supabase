@@ -18,5 +18,14 @@ extension CategoryExtension on CategoryEnum {
     }
   }
 
-
+  int get id {
+    switch (this) {
+      case CategoryEnum.TASK:
+        return 0;
+      case CategoryEnum.GOAL:
+        return 1;
+      case CategoryEnum.EVEN:
+        return 2;
+    }
+  }
 }

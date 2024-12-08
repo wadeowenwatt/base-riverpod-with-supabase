@@ -1,26 +1,56 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:todo_app/components/app_text_field.dart';
 import 'package:todo_app/constants/app_colors.dart';
 import 'package:todo_app/constants/app_images.dart';
 import 'package:todo_app/constants/app_text_style.dart';
 import 'package:todo_app/models/enum/category_enum.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:todo_app/models/enum/load_state.dart';
+import 'package:todo_app/screens/todo_detail/vm/todo_detail_notifier.dart';
+import 'package:todo_app/screens/todo_detail/vm/todo_detail_state.dart';
+import 'package:todo_app/utils/global_loading.dart';
 
-class TodoDetailPage extends StatefulWidget {
+final todoDetailNotifierProvider =
+    StateNotifierProvider<TodoDetailNotifier, TodoDetailState>((ref) {
+  return TodoDetailNotifier();
+});
+
+class TodoDetailPage extends ConsumerStatefulWidget {
   const TodoDetailPage({super.key});
 
   @override
-  State<TodoDetailPage> createState() => _TodoDetailPageState();
+  ConsumerState<TodoDetailPage> createState() => _TodoDetailPageState();
 }
 
-class _TodoDetailPageState extends State<TodoDetailPage> {
+class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
+  late TodoDetailNotifier vmRead;
+  TextEditingController dateEditing = TextEditingController();
+  TextEditingController timeEditing = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    vmRead = ref.read(todoDetailNotifierProvider.notifier);
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
+    final vmWatch = ref.watch(todoDetailNotifierProvider);
+    ref.listen(todoDetailNotifierProvider, (previous, next) {
+      if (next.loadState == LoadState.Loading) {
+        Global.showLoading(context);
+      } else {
+        Global.hideLoading();
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
@@ -59,7 +89,7 @@ class _TodoDetailPageState extends State<TodoDetailPage> {
                               const SizedBox(height: 8),
                               AppTextField(
                                 onChanged: (text) {
-                                  // TODO: Title
+                                  vmRead.onChangedTitle(text);
                                 },
                                 hintText: "Task Title",
                               )
@@ -110,14 +140,19 @@ class _TodoDetailPageState extends State<TodoDetailPage> {
                                           maxTime: DateTime(2028),
                                           showTitleActions: true,
                                           onConfirm: (DateTime time) {
-                                            print(">>> $time");
+                                            vmRead.onChangedDate(time);
+                                            dateEditing.text =
+                                                DateFormat("dd/MM/yyyy")
+                                                    .format(time);
                                           },
-                                          // TODO: currentTime: vm.datePicker
+                                          currentTime:
+                                              vmWatch.draftTodo.dateTime,
                                         );
                                       },
                                       child: AppTextField(
+                                        controller: dateEditing,
                                         enabled: false,
-                                        suffixIcon: Icon(
+                                        suffixIcon: const Icon(
                                           Icons.calendar_today_outlined,
                                           color: AppColors.primaryColor,
                                         ),
@@ -146,14 +181,19 @@ class _TodoDetailPageState extends State<TodoDetailPage> {
                                           context,
                                           showTitleActions: true,
                                           onConfirm: (DateTime time) {
-                                            print(">>> $time");
+                                            vmRead.onChangedDate(time);
+                                            timeEditing.text =
+                                                DateFormat("HH:mm")
+                                                    .format(time);
                                           },
-                                          // TODO: currentTime: vm.timePicker
+                                          currentTime:
+                                              vmWatch.draftTodo.dateTime,
                                         );
                                       },
                                       child: AppTextField(
+                                        controller: timeEditing,
                                         enabled: false,
-                                        suffixIcon: Icon(
+                                        suffixIcon: const Icon(
                                           Icons.access_time_outlined,
                                           color: AppColors.primaryColor,
                                         ),
@@ -177,11 +217,26 @@ class _TodoDetailPageState extends State<TodoDetailPage> {
                               ),
                               const SizedBox(height: 8),
                               AppTextField(
-                                onChanged: (text) {},
+                                onChanged: (text) {
+                                  vmRead.onChangedNotes(text);
+                                },
                                 hintText: "Notes",
                                 isMultipleLine: true,
                               )
                             ],
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: width,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                vmRead.saveNewTodo();
+                              },
+                              child: const Text(
+                                "Save",
+                                style: AppTextStyle.whiteSemiBold,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -197,16 +252,19 @@ class _TodoDetailPageState extends State<TodoDetailPage> {
   }
 
   Widget _buildItemCategory({required CategoryEnum categoryType}) {
+    final vmWatch = ref.watch(todoDetailNotifierProvider);
+
     return GestureDetector(
       onTap: () {
-        /// TODO: onChangeCategory(categoryType)
+        vmRead.onChangedCategory(categoryType);
       },
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            /// TODO: if vm.valueSelect == categoryType => change color
-            color: Colors.white,
+            color: vmWatch.draftTodo.category == categoryType
+                ? AppColors.primaryColor
+                : Colors.white,
             width: 1,
           ),
         ),
@@ -261,11 +319,11 @@ class CustomAppBarDetail extends SliverPersistentHeaderDelegate {
               margin: const EdgeInsets.only(left: 16),
               height: 48,
               width: 48,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.close,
                 size: 28,
                 color: AppColors.primaryColor,

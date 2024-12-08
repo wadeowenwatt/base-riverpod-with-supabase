@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todo_app/constants/app_colors.dart';
+import 'package:todo_app/constants/app_text_style.dart';
 
 class AppTextField extends StatelessWidget {
   const AppTextField({
@@ -9,6 +10,7 @@ class AppTextField extends StatelessWidget {
     this.isMultipleLine = false,
     this.enabled = true,
     this.suffixIcon,
+    this.controller,
   });
 
   final String? hintText;
@@ -16,14 +18,19 @@ class AppTextField extends StatelessWidget {
   final bool isMultipleLine;
   final bool enabled;
   final Widget? suffixIcon;
+  final TextEditingController? controller;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       enabled: enabled,
       onChanged: onChanged,
       keyboardType: isMultipleLine ? TextInputType.multiline : null,
       maxLines: isMultipleLine ? 5 : 1,
+      style: const TextStyle(
+        color: Colors.black,
+      ),
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.white,

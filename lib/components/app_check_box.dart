@@ -25,9 +25,9 @@ class _AppCheckBoxState extends State<AppCheckBox> {
   }
 
   void changeState() {
-    setState(() {
-      value = !value;
-    });
+    // setState(() {
+    //   value = !value;
+    // });
     widget.onChanged(value);
   }
 

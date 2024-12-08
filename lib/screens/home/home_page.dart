@@ -1,26 +1,56 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo_app/components/app_check_box.dart';
 import 'package:todo_app/constants/app_colors.dart';
 import 'package:todo_app/constants/app_images.dart';
 import 'package:todo_app/constants/app_text_style.dart';
+import 'package:todo_app/models/enum/category_enum.dart';
+import 'package:todo_app/models/enum/load_state.dart';
 import 'package:todo_app/routing/routes.dart';
+import 'package:todo_app/screens/home/vm/home_notifier.dart';
+import 'package:todo_app/screens/home/vm/home_state.dart';
+import 'package:todo_app/utils/global_loading.dart';
 
-class HomePage extends StatefulWidget {
+final homeNotifierProvider =
+    StateNotifierProvider<HomeNotifier, HomeState>((ref) {
+  return HomeNotifier()..fetchTodoData();
+});
+
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
+  late HomeNotifier vmRead;
+
+  @override
+  void initState() {
+    super.initState();
+    vmRead = ref.read(homeNotifierProvider.notifier);
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
+    final vmWatch = ref.watch(homeNotifierProvider);
+
+    ref.listen(homeNotifierProvider, (previous, next) {
+      if (next.loadState == LoadState.Loading) {
+        Global.showLoading(context);
+      } else {
+        Global.hideLoading();
+      }
+    });
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -39,12 +69,11 @@ class _HomePageState extends State<HomePage> {
             ),
             RefreshIndicator(
               onRefresh: () async {
-                // Todo: refresh list todo
+                vmRead.fetchTodoData();
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: CustomScrollView(
-                  physics: const ClampingScrollPhysics(),
                   slivers: [
                     SliverPersistentHeader(
                       delegate: CustomAppBar(
@@ -52,112 +81,107 @@ class _HomePageState extends State<HomePage> {
                         maxExtent: height * 0.23,
                       ),
                     ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          BorderRadius? borderRadius;
-                          if (index == 0) {
-                            borderRadius = BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            );
-                          }
-                          if (index == 6) {
-                            borderRadius = BorderRadius.only(
-                              bottomLeft: Radius.circular(16),
-                              bottomRight: Radius.circular(16),
-                            );
-                          }
-                          return Container(
-                            decoration: BoxDecoration(
-                              borderRadius: borderRadius,
-                              color: Colors.white,
-                              border: (index != 6)
-                                  ? Border(
-                                      bottom: BorderSide(
-                                          color: AppColors.lightDivider),
-                                    )
-                                  : null,
-                            ),
-                            child: ListTile(
-                              leading: Image.asset(
-                                AppImages.icTask,
-                                width: 48,
-                                height: 48,
-                              ),
-                              title: Text("ete"),
-                              subtitle: Text("ádasd"),
-                              trailing: AppCheckBox(
-                                onChanged: (valueChange) {
-                                  // Todo: change
-                                },
-                                value: false,
+                    vmWatch.todoList.isEmpty && vmWatch.completedList.isEmpty
+                        ? const SliverFillRemaining(
+                            child: Center(
+                              child: Text(
+                                "You don't have any task!",
+                                style: AppTextStyle.blackSemiBold,
                               ),
                             ),
-                          );
-                        },
-                        childCount: 7,
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Text(
-                          "Completed",
-                          style: AppTextStyle.whiteSemiBold.copyWith(
-                            color: Colors.black,
-                            fontSize: 16,
+                          )
+                        : SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                BorderRadius? borderRadius;
+                                if (vmWatch.todoList.length == 1) {
+                                  borderRadius = const BorderRadius.all(
+                                    Radius.circular(16),
+                                  );
+                                } else {
+                                  if (index == 0) {
+                                    borderRadius = const BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      topRight: Radius.circular(16),
+                                    );
+                                  }
+                                  if (index == vmWatch.todoList.length - 1) {
+                                    borderRadius = const BorderRadius.only(
+                                      bottomLeft: Radius.circular(16),
+                                      bottomRight: Radius.circular(16),
+                                    );
+                                  }
+                                }
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: borderRadius,
+                                    color: Colors.white,
+                                    border: (index != 6)
+                                        ? const Border(
+                                            bottom: BorderSide(
+                                                color: AppColors.lightDivider),
+                                          )
+                                        : null,
+                                  ),
+                                  child: _buildListTileTodo(index),
+                                );
+                              },
+                              childCount: vmWatch.todoList.length,
+                            ),
+                          ),
+                    if (vmWatch.completedList.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Text(
+                            "Completed",
+                            style: AppTextStyle.whiteSemiBold.copyWith(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          BorderRadius? borderRadius;
-                          if (index == 0) {
-                            borderRadius = BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            );
-                          }
-                          if (index == 4) {
-                            borderRadius = BorderRadius.only(
-                              bottomLeft: Radius.circular(16),
-                              bottomRight: Radius.circular(16),
-                            );
-                          }
-                          return Container(
-                            decoration: BoxDecoration(
-                              borderRadius: borderRadius,
-                              color: Colors.white,
-                              border: (index != 5)
-                                  ? Border(
-                                      bottom: BorderSide(
-                                          color: AppColors.lightDivider),
-                                    )
-                                  : null,
-                            ),
-                            child: ListTile(
-                              leading: Image.asset(
-                                AppImages.icEvent,
-                                width: 48,
-                                height: 48,
+                    if (vmWatch.completedList.isNotEmpty)
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            BorderRadius? borderRadius;
+                            if (vmWatch.completedList.length == 1) {
+                              borderRadius = const BorderRadius.all(
+                                Radius.circular(16),
+                              );
+                            } else {
+                              if (index == 0) {
+                                borderRadius = const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  topRight: Radius.circular(16),
+                                );
+                              }
+                              if (index == vmWatch.completedList.length - 1) {
+                                borderRadius = const BorderRadius.only(
+                                  bottomLeft: Radius.circular(16),
+                                  bottomRight: Radius.circular(16),
+                                );
+                              }
+                            }
+                            return Container(
+                              decoration: BoxDecoration(
+                                borderRadius: borderRadius,
+                                color: Colors.white,
+                                border: (index != 5)
+                                    ? const Border(
+                                        bottom: BorderSide(
+                                            color: AppColors.lightDivider),
+                                      )
+                                    : null,
                               ),
-                              title: Text("ete"),
-                              subtitle: Text("ádasd"),
-                              trailing: AppCheckBox(
-                                onChanged: (valueChange) {
-                                  // Todo: change
-                                },
-                                value: true,
-                              ),
-                            ),
-                          );
-                        },
-                        childCount: 5,
+                              child: _buildListTileCompleted(index),
+                            );
+                          },
+                          childCount: vmWatch.completedList.length,
+                        ),
                       ),
-                    ),
                     const SliverToBoxAdapter(
                       child: SizedBox(height: 100),
                     ),
@@ -184,6 +208,64 @@ class _HomePageState extends State<HomePage> {
             )
           ],
         ),
+      ),
+    );
+  }
+
+  ListTile _buildListTileCompleted(int index) {
+    final vmWatch = ref.watch(homeNotifierProvider);
+    return ListTile(
+      leading: Opacity(
+        opacity: 0.5,
+        child: Image.asset(
+          vmWatch.completedList[index].category.icImage,
+          width: 48,
+          height: 48,
+        ),
+      ),
+      title: Opacity(
+        opacity: 0.5,
+        child: Text(
+          vmWatch.completedList[index].title,
+          style: AppTextStyle.blackSemiBold.copyWith(
+            decoration: TextDecoration.lineThrough,
+          ),
+        ),
+      ),
+      subtitle: Opacity(
+        opacity: 0.5,
+        child: Text(
+          "ádasd",
+          style: AppTextStyle.greyMedium.copyWith(
+            decoration: TextDecoration.lineThrough,
+            decorationColor: Colors.black54,
+          ),
+        ),
+      ),
+      trailing: AppCheckBox(
+        onChanged: (_) {
+          vmRead.onUncompleted(index);
+        },
+        value: vmWatch.completedList[index].isCompleted,
+      ),
+    );
+  }
+
+  ListTile _buildListTileTodo(int index) {
+    final vmWatch = ref.watch(homeNotifierProvider);
+    return ListTile(
+      leading: Image.asset(
+        vmWatch.todoList[index].category.icImage,
+        width: 48,
+        height: 48,
+      ),
+      title: Text(vmWatch.todoList[index].title),
+      subtitle: Text("hehe"),
+      trailing: AppCheckBox(
+        onChanged: (_) {
+          vmRead.onCompleted(index);
+        },
+        value: vmWatch.todoList[index].isCompleted,
       ),
     );
   }
