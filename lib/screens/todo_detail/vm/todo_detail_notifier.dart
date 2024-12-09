@@ -14,6 +14,7 @@ class TodoDetailNotifier extends StateNotifier<TodoDetailState> {
             draftTodo: TodoEntity(
               title: "",
               userId: "",
+              category: CategoryEnum.TASK,
             ),
           ),
         );
@@ -63,6 +64,12 @@ class TodoDetailNotifier extends StateNotifier<TodoDetailState> {
       draftTodo: state.draftTodo.copyWith(
         notes: text,
       ),
+    );
+  }
+
+  void updateEditorTodo(TodoEntity todoEntity) {
+    state = state.copyWith(
+      draftTodo: todoEntity,
     );
   }
 }

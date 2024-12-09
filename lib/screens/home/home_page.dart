@@ -197,7 +197,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 color: AppColors.lightBackground,
                 child: ElevatedButton(
                   onPressed: () {
-                    context.push(Routes.todoDetail);
+                    context.push(Routes.todoDetail).then(
+                      (value) {
+                        if (value == true) vmRead.fetchTodoData();
+                      },
+                    );
                   },
                   child: Text(
                     "Add New Task",
@@ -232,16 +236,19 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
       ),
-      subtitle: Opacity(
-        opacity: 0.5,
-        child: Text(
-          "ádasd",
-          style: AppTextStyle.greyMedium.copyWith(
-            decoration: TextDecoration.lineThrough,
-            decorationColor: Colors.black54,
-          ),
-        ),
-      ),
+      subtitle: vmWatch.completedList[index].dateTime == null
+          ? SizedBox()
+          : Opacity(
+              opacity: 0.5,
+              child: Text(
+                DateFormat("MMM dd, yy hh:mm aa")
+                    .format(vmWatch.completedList[index].dateTime!),
+                style: AppTextStyle.greyMedium.copyWith(
+                  decoration: TextDecoration.lineThrough,
+                  decorationColor: Colors.black54,
+                ),
+              ),
+            ),
       trailing: AppCheckBox(
         onChanged: (_) {
           vmRead.onUncompleted(index);
@@ -254,13 +261,27 @@ class _HomePageState extends ConsumerState<HomePage> {
   ListTile _buildListTileTodo(int index) {
     final vmWatch = ref.watch(homeNotifierProvider);
     return ListTile(
+      onTap: () {
+        context.push(Routes.todoDetail, extra: vmWatch.todoList[index]);
+      },
       leading: Image.asset(
         vmWatch.todoList[index].category.icImage,
         width: 48,
         height: 48,
       ),
-      title: Text(vmWatch.todoList[index].title),
-      subtitle: Text("hehe"),
+      title: Text(
+        vmWatch.todoList[index].title,
+        style: AppTextStyle.blackSemiBold,
+      ),
+      subtitle: vmWatch.todoList[index].dateTime == null
+          ? const SizedBox()
+          : Text(
+              DateFormat("MMM dd, yy hh:mm aa")
+                  .format(vmWatch.todoList[index].dateTime!),
+              style: AppTextStyle.greyMedium.copyWith(
+                decorationColor: Colors.black54,
+              ),
+            ),
       trailing: AppCheckBox(
         onChanged: (_) {
           vmRead.onCompleted(index);

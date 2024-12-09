@@ -8,6 +8,7 @@ import 'package:todo_app/components/app_text_field.dart';
 import 'package:todo_app/constants/app_colors.dart';
 import 'package:todo_app/constants/app_images.dart';
 import 'package:todo_app/constants/app_text_style.dart';
+import 'package:todo_app/models/entity/todo_entity.dart';
 import 'package:todo_app/models/enum/category_enum.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:todo_app/models/enum/load_state.dart';
@@ -16,7 +17,8 @@ import 'package:todo_app/screens/todo_detail/vm/todo_detail_state.dart';
 import 'package:todo_app/utils/global_loading.dart';
 
 final todoDetailNotifierProvider =
-    StateNotifierProvider<TodoDetailNotifier, TodoDetailState>((ref) {
+    StateNotifierProvider.autoDispose<TodoDetailNotifier, TodoDetailState>(
+        (ref) {
   return TodoDetailNotifier();
 });
 
@@ -31,6 +33,7 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
   late TodoDetailNotifier vmRead;
   TextEditingController dateEditing = TextEditingController();
   TextEditingController timeEditing = TextEditingController();
+  TodoEntity? todoEntity;
 
   @override
   void initState() {
@@ -39,7 +42,13 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // todoEntity = GoRouterState.of(context).extra as TodoEntity;
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     final vmWatch = ref.watch(todoDetailNotifierProvider);
@@ -230,7 +239,10 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
                             width: width,
                             child: ElevatedButton(
                               onPressed: () {
-                                vmRead.saveNewTodo();
+                                vmRead
+                                    .saveNewTodo()
+                                    .then((value) => context.pop(true));
+                                ;
                               },
                               child: const Text(
                                 "Save",
@@ -314,7 +326,7 @@ class CustomAppBarDetail extends SliverPersistentHeaderDelegate {
         Align(
           alignment: Alignment.centerLeft,
           child: GestureDetector(
-            onTap: () => context.pop(),
+            onTap: () => context.pop(false),
             child: Container(
               margin: const EdgeInsets.only(left: 16),
               height: 48,
