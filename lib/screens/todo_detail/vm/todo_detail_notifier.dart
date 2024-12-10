@@ -21,6 +21,12 @@ class TodoDetailNotifier extends StateNotifier<TodoDetailState> {
 
   TodoService service = TodoService();
 
+  void initState(TodoEntity todoEntity) {
+    state = state.copyWith(
+      draftTodo: todoEntity,
+    );
+  }
+
   Future<void> saveNewTodo() async {
     state = state.copyWith(
       loadState: LoadState.Loading,

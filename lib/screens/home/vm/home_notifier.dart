@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_app/models/entity/todo_entity.dart';
 import 'package:todo_app/models/enum/load_state.dart';
@@ -29,7 +30,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
         todoList.add(todo);
       }
     });
-    print(">>> ${allTodoList?.length} - ${todoList.length} - ${completedList.length}");
+    debugPrint(">>> ${allTodoList?.length} - ${todoList.length} - ${completedList.length}");
     state = state.copyWith(
       loadState: LoadState.Successed,
       todoList: todoList,
