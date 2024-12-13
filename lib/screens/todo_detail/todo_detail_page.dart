@@ -23,11 +23,8 @@ final todoDetailNotifierProvider =
 });
 
 class TodoDetailPage extends ConsumerStatefulWidget {
-  final TodoEntity? todoEntity;
-
   const TodoDetailPage({
     super.key,
-    this.todoEntity,
   });
 
   @override
@@ -46,18 +43,6 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
   void initState() {
     super.initState();
     vmRead = ref.read(todoDetailNotifierProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (widget.todoEntity != null) {
-        vmRead.initState(widget.todoEntity!);
-        titleEditing.text = widget.todoEntity!.title;
-        noteEditing.text = widget.todoEntity!.notes ?? "";
-        if (todoEntity?.dateTime != null) {
-          dateEditing.text =
-              DateFormat("dd/MM/yyyy").format(todoEntity!.dateTime!);
-          timeEditing.text = DateFormat("HH:mm").format(todoEntity!.dateTime!);
-        }
-      }
-    });
   }
 
   @override
@@ -78,7 +63,6 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
         Global.hideLoading();
       }
     });
-
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
@@ -116,9 +100,8 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
                             width: width,
                             child: ElevatedButton(
                               onPressed: () {
-                                vmRead
-                                    .saveNewTodo()
-                                    .then((value) => context.pop(true));
+                                vmRead.saveNewTodo().then(
+                                    (todoEntity) => context.pop(todoEntity));
                               },
                               child: const Text(
                                 "Save",
@@ -349,7 +332,7 @@ class CustomAppBarDetail extends SliverPersistentHeaderDelegate {
         Align(
           alignment: Alignment.centerLeft,
           child: GestureDetector(
-            onTap: () => context.pop(false),
+            onTap: () => context.pop(),
             child: Container(
               margin: const EdgeInsets.only(left: 16),
               height: 48,

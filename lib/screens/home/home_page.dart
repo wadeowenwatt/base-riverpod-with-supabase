@@ -9,11 +9,14 @@ import 'package:todo_app/components/app_check_box.dart';
 import 'package:todo_app/constants/app_colors.dart';
 import 'package:todo_app/constants/app_images.dart';
 import 'package:todo_app/constants/app_text_style.dart';
+import 'package:todo_app/models/entity/todo_entity.dart';
 import 'package:todo_app/models/enum/category_enum.dart';
 import 'package:todo_app/models/enum/load_state.dart';
+import 'package:todo_app/models/list_animation_model.dart';
 import 'package:todo_app/routing/routes.dart';
 import 'package:todo_app/screens/home/vm/home_notifier.dart';
 import 'package:todo_app/screens/home/vm/home_state.dart';
+import 'package:todo_app/screens/home/widget/item_list_widget.dart';
 import 'package:todo_app/utils/global_loading.dart';
 
 final homeNotifierProvider =
@@ -31,16 +34,30 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   late HomeNotifier vmRead;
 
+  final GlobalKey<SliverAnimatedListState> _listTodoKey =
+      GlobalKey<SliverAnimatedListState>();
+  late ListAnimationModel<TodoEntity> _listTodo;
+
   @override
   void initState() {
     super.initState();
     vmRead = ref.read(homeNotifierProvider.notifier);
+    ref.listenManual(homeNotifierProvider, (previous, next) {
+      if (previous?.todoList != next.todoList) {
+        _listTodo = ListAnimationModel(
+          listKey: _listTodoKey,
+          removedItemBuilder: _buildRemoveTodoItem,
+          initialItems: next.todoList,
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
+
     final vmWatch = ref.watch(homeNotifierProvider);
 
     ref.listen(homeNotifierProvider, (previous, next) {
@@ -90,46 +107,44 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
                             ),
                           )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                BorderRadius? borderRadius;
-                                if (vmWatch.todoList.length == 1) {
-                                  borderRadius = const BorderRadius.all(
-                                    Radius.circular(16),
-                                  );
-                                } else {
-                                  if (index == 0) {
-                                    borderRadius = const BorderRadius.only(
-                                      topLeft: Radius.circular(16),
-                                      topRight: Radius.circular(16),
-                                    );
-                                  }
-                                  if (index == vmWatch.todoList.length - 1) {
-                                    borderRadius = const BorderRadius.only(
-                                      bottomLeft: Radius.circular(16),
-                                      bottomRight: Radius.circular(16),
-                                    );
-                                  }
-                                }
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: borderRadius,
-                                    color: Colors.white,
-                                    border: (index != 6)
-                                        ? const Border(
-                                            bottom: BorderSide(
-                                                color: AppColors.lightDivider),
-                                          )
-                                        : null,
-                                  ),
-                                  child: _buildListTileTodo(index),
+                        : SliverAnimatedList(
+                            key: _listTodoKey,
+                            initialItemCount: vmWatch.todoList.length,
+                            itemBuilder: (BuildContext context, int index,
+                                Animation<double> animation) {
+                              BorderRadius? borderRadius;
+                              if (vmWatch.todoList.length == 1) {
+                                borderRadius = const BorderRadius.all(
+                                  Radius.circular(16),
                                 );
-                              },
-                              childCount: vmWatch.todoList.length,
-                            ),
+                              } else {
+                                if (index == 0) {
+                                  borderRadius = const BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    topRight: Radius.circular(16),
+                                  );
+                                }
+                                if (index == vmWatch.todoList.length - 1) {
+                                  borderRadius = const BorderRadius.only(
+                                    bottomLeft: Radius.circular(16),
+                                    bottomRight: Radius.circular(16),
+                                  );
+                                }
+                              }
+                              return ItemListWidget(
+                                borderRadius: borderRadius,
+                                item: _listTodo[index],
+                                onChangedState: () {
+                                  _listTodo.removeAt(index);
+                                  vmRead.onCompleted(index);
+                                },
+                                animation: animation,
+                                onDeleted: () {},
+                              );
+                            },
                           ),
-                    if (vmWatch.completedList.isNotEmpty)
+                    if (vmWatch.completedList.isNotEmpty &&
+                        vmWatch.todoList.isNotEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 24),
@@ -198,8 +213,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: ElevatedButton(
                   onPressed: () {
                     context.push(Routes.todoDetail).then(
-                      (value) {
-                        if (value == true) vmRead.fetchTodoData();
+                      (todoEntity) {
+                        if (todoEntity != null) {
+                          _listTodo.insert(vmWatch.todoList.length,
+                              todoEntity as TodoEntity);
+                          vmRead.fetchTodoData();
+                        }
                       },
                     );
                   },
@@ -288,6 +307,20 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
         value: vmWatch.todoList[index].isCompleted,
       ),
+    );
+  }
+
+  Widget _buildRemoveTodoItem(
+    TodoEntity item,
+    BuildContext context,
+    Animation<double> animation,
+  ) {
+    final vmWatch = ref.watch(homeNotifierProvider);
+    return ItemListWidget(
+      item: item,
+      animation: animation,
+      onChangedState: () => vmRead.onCompleted(vmWatch.todoList.indexOf(item)),
+      onDeleted: () {},
     );
   }
 }

@@ -18,10 +18,9 @@ class AppRouter {
       GoRoute(
         path: Routes.todoDetail,
         pageBuilder: (context, state) {
-          TodoEntity? todoEntity = state.extra as TodoEntity;
           return CustomTransitionPage(
             key: state.pageKey,
-            child: TodoDetailPage(todoEntity: todoEntity),
+            child: const TodoDetailPage(),
             transitionDuration: const Duration(milliseconds: 500),
             transitionsBuilder: (BuildContext context,
                 Animation<double> animation,

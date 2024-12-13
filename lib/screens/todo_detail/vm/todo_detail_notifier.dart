@@ -27,18 +27,23 @@ class TodoDetailNotifier extends StateNotifier<TodoDetailState> {
     );
   }
 
-  Future<void> saveNewTodo() async {
-    state = state.copyWith(
-      loadState: LoadState.Loading,
-    );
-    final udid = await SharedPreference.getUDID();
-    var todoEntity = state.draftTodo.copyWith(
-      userId: udid,
-    );
-    await service.addTodo(todoEntity);
-    state = state.copyWith(
-      loadState: LoadState.Successed,
-    );
+  Future<TodoEntity?> saveNewTodo() async {
+    try {
+      state = state.copyWith(
+        loadState: LoadState.Loading,
+      );
+      final udid = await SharedPreference.getUDID();
+      var todoEntity = state.draftTodo.copyWith(
+        userId: udid,
+      );
+      await service.addTodo(todoEntity);
+      state = state.copyWith(
+        loadState: LoadState.Successed,
+      );
+      return todoEntity;
+    } catch (e) {
+      return null;
+    }
   }
 
   void onChangedCategory(CategoryEnum categoryEnum) {
