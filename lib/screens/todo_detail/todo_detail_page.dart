@@ -23,7 +23,9 @@ final todoDetailNotifierProvider =
 });
 
 class TodoDetailPage extends ConsumerStatefulWidget {
-  const TodoDetailPage({super.key});
+  const TodoDetailPage({
+    super.key,
+  });
 
   @override
   ConsumerState<TodoDetailPage> createState() => _TodoDetailPageState();
@@ -33,6 +35,8 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
   late TodoDetailNotifier vmRead;
   TextEditingController dateEditing = TextEditingController();
   TextEditingController timeEditing = TextEditingController();
+  TextEditingController titleEditing = TextEditingController();
+  TextEditingController noteEditing = TextEditingController();
   TodoEntity? todoEntity;
 
   @override
@@ -59,7 +63,6 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
         Global.hideLoading();
       }
     });
-
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
@@ -85,164 +88,20 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
                       ),
                       child: Column(
                         children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Task Title",
-                                style: AppTextStyle.blackSemiBold.copyWith(
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              AppTextField(
-                                onChanged: (text) {
-                                  vmRead.onChangedTitle(text);
-                                },
-                                hintText: "Task Title",
-                              )
-                            ],
-                          ),
+                          _buildTitleField(),
                           const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Category",
-                                style: AppTextStyle.blackSemiBold.copyWith(
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(width: 24),
-                              _buildItemCategory(
-                                  categoryType: CategoryEnum.TASK),
-                              const SizedBox(width: 16),
-                              _buildItemCategory(
-                                  categoryType: CategoryEnum.EVEN),
-                              const SizedBox(width: 16),
-                              _buildItemCategory(
-                                  categoryType: CategoryEnum.GOAL),
-                            ],
-                          ),
+                          _buildCategoryField(),
                           const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Date",
-                                      style:
-                                          AppTextStyle.blackSemiBold.copyWith(
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        DatePicker.showDatePicker(
-                                          context,
-                                          minTime: DateTime(2000),
-                                          maxTime: DateTime(2028),
-                                          showTitleActions: true,
-                                          onConfirm: (DateTime time) {
-                                            vmRead.onChangedDate(time);
-                                            dateEditing.text =
-                                                DateFormat("dd/MM/yyyy")
-                                                    .format(time);
-                                          },
-                                          currentTime:
-                                              vmWatch.draftTodo.dateTime,
-                                        );
-                                      },
-                                      child: AppTextField(
-                                        controller: dateEditing,
-                                        enabled: false,
-                                        suffixIcon: const Icon(
-                                          Icons.calendar_today_outlined,
-                                          color: AppColors.primaryColor,
-                                        ),
-                                        hintText: "Date",
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Time",
-                                      style:
-                                          AppTextStyle.blackSemiBold.copyWith(
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        DatePicker.showTime12hPicker(
-                                          context,
-                                          showTitleActions: true,
-                                          onConfirm: (DateTime time) {
-                                            vmRead.onChangedDate(time);
-                                            timeEditing.text =
-                                                DateFormat("HH:mm")
-                                                    .format(time);
-                                          },
-                                          currentTime:
-                                              vmWatch.draftTodo.dateTime,
-                                        );
-                                      },
-                                      child: AppTextField(
-                                        controller: timeEditing,
-                                        enabled: false,
-                                        suffixIcon: const Icon(
-                                          Icons.access_time_outlined,
-                                          color: AppColors.primaryColor,
-                                        ),
-                                        hintText: "Time",
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          _buildDateTimeField(context, vmWatch),
                           const SizedBox(height: 24),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Notes",
-                                style: AppTextStyle.blackSemiBold.copyWith(
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              AppTextField(
-                                onChanged: (text) {
-                                  vmRead.onChangedNotes(text);
-                                },
-                                hintText: "Notes",
-                                isMultipleLine: true,
-                              )
-                            ],
-                          ),
+                          _buildNoteField(),
                           const SizedBox(height: 24),
                           SizedBox(
                             width: width,
                             child: ElevatedButton(
                               onPressed: () {
-                                vmRead
-                                    .saveNewTodo()
-                                    .then((value) => context.pop(true));
-                                ;
+                                vmRead.saveNewTodo().then(
+                                    (todoEntity) => context.pop(todoEntity));
                               },
                               child: const Text(
                                 "Save",
@@ -260,6 +119,153 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Column _buildNoteField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Notes",
+          style: AppTextStyle.blackSemiBold.copyWith(
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        AppTextField(
+          onChanged: (text) {
+            vmRead.onChangedNotes(text);
+          },
+          hintText: "Notes",
+          isMultipleLine: true,
+        )
+      ],
+    );
+  }
+
+  Row _buildDateTimeField(BuildContext context, TodoDetailState vmWatch) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Date",
+                style: AppTextStyle.blackSemiBold.copyWith(
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  DatePicker.showDatePicker(
+                    context,
+                    minTime: DateTime(2000),
+                    maxTime: DateTime(2028),
+                    showTitleActions: true,
+                    onConfirm: (DateTime time) {
+                      vmRead.onChangedDate(time);
+                      dateEditing.text = DateFormat("dd/MM/yyyy").format(time);
+                    },
+                    currentTime: vmWatch.draftTodo.dateTime,
+                  );
+                },
+                child: AppTextField(
+                  controller: dateEditing,
+                  enabled: false,
+                  suffixIcon: const Icon(
+                    Icons.calendar_today_outlined,
+                    color: AppColors.primaryColor,
+                  ),
+                  hintText: "Date",
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Time",
+                style: AppTextStyle.blackSemiBold.copyWith(
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  DatePicker.showTime12hPicker(
+                    context,
+                    showTitleActions: true,
+                    onConfirm: (DateTime time) {
+                      vmRead.onChangedDate(time);
+                      timeEditing.text = DateFormat("HH:mm").format(time);
+                    },
+                    currentTime: vmWatch.draftTodo.dateTime,
+                  );
+                },
+                child: AppTextField(
+                  controller: timeEditing,
+                  enabled: false,
+                  suffixIcon: const Icon(
+                    Icons.access_time_outlined,
+                    color: AppColors.primaryColor,
+                  ),
+                  hintText: "Time",
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row _buildCategoryField() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          "Category",
+          style: AppTextStyle.blackSemiBold.copyWith(
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(width: 24),
+        _buildItemCategory(categoryType: CategoryEnum.TASK),
+        const SizedBox(width: 16),
+        _buildItemCategory(categoryType: CategoryEnum.EVEN),
+        const SizedBox(width: 16),
+        _buildItemCategory(categoryType: CategoryEnum.GOAL),
+      ],
+    );
+  }
+
+  Column _buildTitleField() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Task Title",
+          style: AppTextStyle.blackSemiBold.copyWith(
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        AppTextField(
+          onChanged: (text) {
+            vmRead.onChangedTitle(text);
+          },
+          hintText: "Task Title",
+        )
+      ],
     );
   }
 
@@ -326,7 +332,7 @@ class CustomAppBarDetail extends SliverPersistentHeaderDelegate {
         Align(
           alignment: Alignment.centerLeft,
           child: GestureDetector(
-            onTap: () => context.pop(false),
+            onTap: () => context.pop(),
             child: Container(
               margin: const EdgeInsets.only(left: 16),
               height: 48,
