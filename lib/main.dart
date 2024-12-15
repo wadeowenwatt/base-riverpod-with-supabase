@@ -1,20 +1,34 @@
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_app_installations/firebase_app_installations.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo_app/constants/app_colors.dart';
 import 'package:todo_app/enviroment/env.dart';
+import 'package:todo_app/firebase_options.dart';
 import 'package:todo_app/local_db/shared_preference.dart';
 import 'package:todo_app/routing/router.dart';
-import 'package:todo_app/screens/home/home_page.dart';
-import 'package:todo_app/screens/todo_detail/todo_detail_page.dart';
 import 'package:todo_app/utils/provider_observer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  /// Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  final notificationSettings =
+      await FirebaseMessaging.instance.requestPermission(provisional: true);
+  final token = await FirebaseMessaging.instance.getToken();
+  print(">>> $token");
+
+  final newId = await FirebaseInstallations.instance.getId();
+  print(">>> fid: $newId");
   /// Supabase
   await Supabase.initialize(
     url: Env.supabaseUrl,
