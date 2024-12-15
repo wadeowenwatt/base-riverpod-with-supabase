@@ -7,12 +7,12 @@ import 'package:todo_app/services/todo_service.dart';
 class HomeNotifier extends StateNotifier<HomeState> {
   HomeNotifier()
       : super(
-    const HomeState(
-      loadState: LoadState.Init,
-      todoList: [],
-      completedList: [],
-    ),
-  );
+          const HomeState(
+            loadState: LoadState.Init,
+            todoList: [],
+            completedList: [],
+          ),
+        );
   TodoService service = TodoService();
 
   Future<void> fetchTodoData() async {
@@ -29,7 +29,8 @@ class HomeNotifier extends StateNotifier<HomeState> {
         todoList.add(todo);
       }
     });
-    print(">>> ${allTodoList?.length} - ${todoList.length} - ${completedList.length}");
+    print(
+        ">>> ${allTodoList?.length} - ${todoList.length} - ${completedList.length}");
     state = state.copyWith(
       loadState: LoadState.Successed,
       todoList: todoList,
@@ -38,21 +39,46 @@ class HomeNotifier extends StateNotifier<HomeState> {
   }
 
   Future<void> onCompleted(int index) async {
+    final previousState = state.copyWith();
     state = state.copyWith(
       loadState: LoadState.Loading,
     );
 
-    final itemChange = state.todoList[index];
-    await service.updateTodo(todoId: itemChange.id!, isCompleted: true);
-    await fetchTodoData();
+    final itemChange = state.todoList[index].copyWith(isCompleted: true);
+    final newListTodo = [...state.todoList]..removeAt(index);
+    final newListCompleted = [...state.completedList, itemChange];
+    state = state.copyWith(
+        loadState: LoadState.Successed,
+        todoList: newListTodo,
+        completedList: newListCompleted
+    );
+
+    try {
+      await service.updateTodo(todoEntity: itemChange);
+    } catch (e) {
+      state = previousState;
+    }
   }
 
   Future<void> onUncompleted(int index) async {
+    final previousState = state.copyWith();
     state = state.copyWith(
       loadState: LoadState.Loading,
     );
-    final itemChange = state.completedList[index];
-    await service.updateTodo(todoId: itemChange.id!, isCompleted: false);
-    await fetchTodoData();
+
+    final itemChange = state.completedList[index].copyWith(isCompleted: false);
+    final newListCompleted = [...state.completedList]..removeAt(index);
+    final newListTodo = [...state.todoList, itemChange];
+    state = state.copyWith(
+        loadState: LoadState.Successed,
+        todoList: newListTodo,
+        completedList: newListCompleted
+    );
+
+    try {
+      await service.updateTodo(todoEntity: itemChange);
+    } catch (e) {
+      state = previousState;
+    }
   }
 }

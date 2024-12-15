@@ -129,7 +129,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               childCount: vmWatch.todoList.length,
                             ),
                           ),
-                    if (vmWatch.completedList.isNotEmpty)
+                    if (vmWatch.completedList.isNotEmpty && vmWatch.todoList.isNotEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 24),
@@ -262,7 +262,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     final vmWatch = ref.watch(homeNotifierProvider);
     return ListTile(
       onTap: () {
-        context.push(Routes.todoDetail, extra: vmWatch.todoList[index]);
+        context
+            .push(Routes.todoDetail, extra: vmWatch.todoList[index])
+            .then((value) {
+          if (value == true) vmRead.fetchTodoData();
+        });
       },
       leading: Image.asset(
         vmWatch.todoList[index].category.icImage,

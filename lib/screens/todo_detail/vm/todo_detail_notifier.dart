@@ -21,6 +21,12 @@ class TodoDetailNotifier extends StateNotifier<TodoDetailState> {
 
   TodoService service = TodoService();
 
+  void initTodoEntity(TodoEntity todoEntity) {
+    state = state.copyWith(
+      draftTodo: todoEntity,
+    );
+  }
+
   Future<void> saveNewTodo() async {
     state = state.copyWith(
       loadState: LoadState.Loading,
@@ -67,9 +73,16 @@ class TodoDetailNotifier extends StateNotifier<TodoDetailState> {
     );
   }
 
-  void updateEditorTodo(TodoEntity todoEntity) {
+  Future<void> updateTodo() async {
     state = state.copyWith(
-      draftTodo: todoEntity,
+      loadState: LoadState.Loading,
+    );
+    print(state.draftTodo.title);
+    await service.updateTodo(todoEntity: state.draftTodo);
+    state = state.copyWith(
+      loadState: LoadState.Successed,
     );
   }
+
+
 }

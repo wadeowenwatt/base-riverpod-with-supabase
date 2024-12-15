@@ -1,7 +1,8 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:todo_app/models/enum/category_enum.dart';
 
-class TodoEntity {
+class TodoEntity extends Equatable {
   int? id;
   String title;
   String? notes;
@@ -95,4 +96,19 @@ class TodoEntity {
       notes: notes ?? this.notes,
     );
   }
+
+  @override
+  String toString() {
+    return 'TodoEntity{id: $id, title: $title, notes: $notes, userId: $userId, category: $category, dateTime: $dateTime, isCompleted: $isCompleted}';
+  }
+
+  @override
+  List<Object?> get props => [
+        id,
+        title,
+        notes,
+        category,
+        dateTime,
+        isCompleted,
+      ];
 }

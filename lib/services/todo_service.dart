@@ -39,13 +39,13 @@ class TodoService {
   }
 
   Future<void> updateTodo({
-    required int todoId,
-    required bool isCompleted,
+    required TodoEntity todoEntity,
   }) async {
     try {
-      final response = await supabase.from(AppConstants.tableName).update({
-        'is_completed': isCompleted,
-      }).eq('id', todoId);
+      final response = await supabase
+          .from(AppConstants.tableName)
+          .update(todoEntity.toJson())
+          .eq('id', todoEntity.id!);
     } catch (e) {
       debugPrint("Update todo error: $e");
     }
