@@ -36,12 +36,29 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   final GlobalKey<SliverAnimatedListState> _listTodoKey =
       GlobalKey<SliverAnimatedListState>();
+  final GlobalKey<SliverAnimatedListState> _listCompletedKey =
+      GlobalKey<SliverAnimatedListState>();
   late ListAnimationModel<TodoEntity> _listTodo;
+  late ListAnimationModel<TodoEntity> _listCompleted;
 
   @override
   void initState() {
     super.initState();
+    stateListener();
     vmRead = ref.read(homeNotifierProvider.notifier);
+    _listTodo = ListAnimationModel(
+      listKey: _listTodoKey,
+      removedItemBuilder: _buildRemoveTodoItem,
+      initialItems: [],
+    );
+    _listCompleted = ListAnimationModel(
+      listKey: _listCompletedKey,
+      removedItemBuilder: _buildRemoveCompletedItem,
+      initialItems: [],
+    );
+  }
+
+  void stateListener() {
     ref.listenManual(homeNotifierProvider, (previous, next) {
       if (previous?.todoList != next.todoList) {
         _listTodo = ListAnimationModel(
@@ -49,6 +66,21 @@ class _HomePageState extends ConsumerState<HomePage> {
           removedItemBuilder: _buildRemoveTodoItem,
           initialItems: next.todoList,
         );
+      }
+      if (previous?.completedList != next.completedList) {
+        _listCompleted = ListAnimationModel(
+          listKey: _listCompletedKey,
+          removedItemBuilder: _buildRemoveCompletedItem,
+          initialItems: next.completedList,
+        );
+      }
+    });
+
+    ref.listenManual(homeNotifierProvider, (previous, next) {
+      if (next.loadState == LoadState.Loading) {
+        Global.showLoading(context);
+      } else {
+        Global.hideLoading();
       }
     });
   }
@@ -59,14 +91,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final width = MediaQuery.of(context).size.width;
 
     final vmWatch = ref.watch(homeNotifierProvider);
-
-    ref.listen(homeNotifierProvider, (previous, next) {
-      if (next.loadState == LoadState.Loading) {
-        Global.showLoading(context);
-      } else {
-        Global.hideLoading();
-      }
-    });
 
     return Scaffold(
       body: SafeArea(
@@ -98,51 +122,57 @@ class _HomePageState extends ConsumerState<HomePage> {
                         maxExtent: height * 0.23,
                       ),
                     ),
-                    vmWatch.todoList.isEmpty && vmWatch.completedList.isEmpty
-                        ? const SliverFillRemaining(
-                            child: Center(
-                              child: Text(
-                                "You don't have any task!",
-                                style: AppTextStyle.blackSemiBold,
-                              ),
-                            ),
-                          )
-                        : SliverAnimatedList(
-                            key: _listTodoKey,
-                            initialItemCount: vmWatch.todoList.length,
-                            itemBuilder: (BuildContext context, int index,
-                                Animation<double> animation) {
-                              BorderRadius? borderRadius;
-                              if (vmWatch.todoList.length == 1) {
-                                borderRadius = const BorderRadius.all(
-                                  Radius.circular(16),
-                                );
-                              } else {
-                                if (index == 0) {
-                                  borderRadius = const BorderRadius.only(
-                                    topLeft: Radius.circular(16),
-                                    topRight: Radius.circular(16),
-                                  );
-                                }
-                                if (index == vmWatch.todoList.length - 1) {
-                                  borderRadius = const BorderRadius.only(
-                                    bottomLeft: Radius.circular(16),
-                                    bottomRight: Radius.circular(16),
-                                  );
-                                }
-                              }
-                              return ItemListWidget(
-                                borderRadius: borderRadius,
-                                item: _listTodo[index],
-                                onChangedState: () {
-                                  _listTodo.removeAt(index);
-                                  vmRead.onCompleted(index);
-                                },
-                                animation: animation,
-                                onDeleted: () {},
-                              );
-                            },
+                    if (vmWatch.todoList.isEmpty &&
+                        vmWatch.completedList.isEmpty)
+                      const SliverFillRemaining(
+                        child: Center(
+                          child: Text(
+                            "You don't have any task!",
+                            style: AppTextStyle.blackSemiBold,
                           ),
+                        ),
+                      ),
+                    if (_listTodo.length != 0)
+                      SliverAnimatedList(
+                        key: _listTodoKey,
+                        initialItemCount: _listTodo.length,
+                        itemBuilder: (BuildContext context, int index,
+                            Animation<double> animation) {
+                          BorderRadius? borderRadius;
+                          if (_listTodo.length == 1) {
+                            borderRadius = const BorderRadius.all(
+                              Radius.circular(16),
+                            );
+                          } else {
+                            if (index == 0) {
+                              borderRadius = const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              );
+                            }
+                            if (index == _listTodo.length - 1) {
+                              borderRadius = const BorderRadius.only(
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(16),
+                              );
+                            }
+                          }
+                          return ItemListWidget(
+                            isCompleted: false,
+                            borderRadius: borderRadius,
+                            item: _listTodo[index],
+                            onChangedState: () {
+                              _listCompleted.insert(
+                                0,
+                                _listTodo.removeAt(index),
+                              );
+                              vmRead.onCompleted(index);
+                            },
+                            animation: animation,
+                            onDeleted: () {},
+                          );
+                        },
+                      ),
                     if (vmWatch.completedList.isNotEmpty &&
                         vmWatch.todoList.isNotEmpty)
                       SliverToBoxAdapter(
@@ -157,45 +187,45 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
                       ),
-                    if (vmWatch.completedList.isNotEmpty)
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            BorderRadius? borderRadius;
-                            if (vmWatch.completedList.length == 1) {
-                              borderRadius = const BorderRadius.all(
-                                Radius.circular(16),
-                              );
-                            } else {
-                              if (index == 0) {
-                                borderRadius = const BorderRadius.only(
-                                  topLeft: Radius.circular(16),
-                                  topRight: Radius.circular(16),
-                                );
-                              }
-                              if (index == vmWatch.completedList.length - 1) {
-                                borderRadius = const BorderRadius.only(
-                                  bottomLeft: Radius.circular(16),
-                                  bottomRight: Radius.circular(16),
-                                );
-                              }
-                            }
-                            return Container(
-                              decoration: BoxDecoration(
-                                borderRadius: borderRadius,
-                                color: Colors.white,
-                                border: (index != 5)
-                                    ? const Border(
-                                        bottom: BorderSide(
-                                            color: AppColors.lightDivider),
-                                      )
-                                    : null,
-                              ),
-                              child: _buildListTileCompleted(index),
+                    if (_listCompleted.length != 0)
+                      SliverAnimatedList(
+                        key: _listCompletedKey,
+                        initialItemCount: _listCompleted.length,
+                        itemBuilder: (context, index, animation) {
+                          BorderRadius? borderRadius;
+                          if (_listCompleted.length == 1) {
+                            borderRadius = const BorderRadius.all(
+                              Radius.circular(16),
                             );
-                          },
-                          childCount: vmWatch.completedList.length,
-                        ),
+                          } else {
+                            if (index == 0) {
+                              borderRadius = const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              );
+                            }
+                            if (index == _listCompleted.length - 1) {
+                              borderRadius = const BorderRadius.only(
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(16),
+                              );
+                            }
+                          }
+                          return ItemListWidget(
+                            isCompleted: true,
+                            borderRadius: borderRadius,
+                            item: _listCompleted[index],
+                            onChangedState: () {
+                              _listTodo.insert(
+                                vmWatch.todoList.length,
+                                _listCompleted.removeAt(index),
+                              );
+                              vmRead.onUncompleted(index);
+                            },
+                            animation: animation,
+                            onDeleted: () {},
+                          );
+                        },
                       ),
                     const SliverToBoxAdapter(
                       child: SizedBox(height: 100),
@@ -215,9 +245,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     context.push(Routes.todoDetail).then(
                       (todoEntity) {
                         if (todoEntity != null) {
-                          _listTodo.insert(vmWatch.todoList.length,
-                              todoEntity as TodoEntity);
                           vmRead.fetchTodoData();
+                          // _listTodo.insert(vmWatch.todoList.length,
+                          //     todoEntity as TodoEntity);
                         }
                       },
                     );
@@ -235,81 +265,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  ListTile _buildListTileCompleted(int index) {
-    final vmWatch = ref.watch(homeNotifierProvider);
-    return ListTile(
-      leading: Opacity(
-        opacity: 0.5,
-        child: Image.asset(
-          vmWatch.completedList[index].category.icImage,
-          width: 48,
-          height: 48,
-        ),
-      ),
-      title: Opacity(
-        opacity: 0.5,
-        child: Text(
-          vmWatch.completedList[index].title,
-          style: AppTextStyle.blackSemiBold.copyWith(
-            decoration: TextDecoration.lineThrough,
-          ),
-        ),
-      ),
-      subtitle: vmWatch.completedList[index].dateTime == null
-          ? SizedBox()
-          : Opacity(
-              opacity: 0.5,
-              child: Text(
-                DateFormat("MMM dd, yy hh:mm aa")
-                    .format(vmWatch.completedList[index].dateTime!),
-                style: AppTextStyle.greyMedium.copyWith(
-                  decoration: TextDecoration.lineThrough,
-                  decorationColor: Colors.black54,
-                ),
-              ),
-            ),
-      trailing: AppCheckBox(
-        onChanged: (_) {
-          vmRead.onUncompleted(index);
-        },
-        value: vmWatch.completedList[index].isCompleted,
-      ),
-    );
-  }
-
-  ListTile _buildListTileTodo(int index) {
-    final vmWatch = ref.watch(homeNotifierProvider);
-    return ListTile(
-      onTap: () {
-        context.push(Routes.todoDetail, extra: vmWatch.todoList[index]);
-      },
-      leading: Image.asset(
-        vmWatch.todoList[index].category.icImage,
-        width: 48,
-        height: 48,
-      ),
-      title: Text(
-        vmWatch.todoList[index].title,
-        style: AppTextStyle.blackSemiBold,
-      ),
-      subtitle: vmWatch.todoList[index].dateTime == null
-          ? const SizedBox()
-          : Text(
-              DateFormat("MMM dd, yy hh:mm aa")
-                  .format(vmWatch.todoList[index].dateTime!),
-              style: AppTextStyle.greyMedium.copyWith(
-                decorationColor: Colors.black54,
-              ),
-            ),
-      trailing: AppCheckBox(
-        onChanged: (_) {
-          vmRead.onCompleted(index);
-        },
-        value: vmWatch.todoList[index].isCompleted,
-      ),
-    );
-  }
-
   Widget _buildRemoveTodoItem(
     TodoEntity item,
     BuildContext context,
@@ -317,9 +272,26 @@ class _HomePageState extends ConsumerState<HomePage> {
   ) {
     final vmWatch = ref.watch(homeNotifierProvider);
     return ItemListWidget(
+      isCompleted: false,
       item: item,
       animation: animation,
       onChangedState: () => vmRead.onCompleted(vmWatch.todoList.indexOf(item)),
+      onDeleted: () {},
+    );
+  }
+
+  Widget _buildRemoveCompletedItem(
+    TodoEntity item,
+    BuildContext context,
+    Animation<double> animation,
+  ) {
+    final vmWatch = ref.watch(homeNotifierProvider);
+    return ItemListWidget(
+      isCompleted: true,
+      item: item,
+      animation: animation,
+      onChangedState: () =>
+          vmRead.onUncompleted(vmWatch.todoList.indexOf(item)),
       onDeleted: () {},
     );
   }

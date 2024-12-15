@@ -56,8 +56,4 @@ class HomeNotifier extends StateNotifier<HomeState> {
     await service.updateTodo(todoId: itemChange.id!, isCompleted: false);
     await fetchTodoData();
   }
-
-  List<TodoEntity> getListTodoInit() {
-    return state.todoList;
-  }
 }
