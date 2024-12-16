@@ -25,10 +25,7 @@ void main() async {
   final notificationSettings =
       await FirebaseMessaging.instance.requestPermission(provisional: true);
   final token = await FirebaseMessaging.instance.getToken();
-  print(">>> $token");
 
-  final newId = await FirebaseInstallations.instance.getId();
-  print(">>> fid: $newId");
   /// Supabase
   await Supabase.initialize(
     url: Env.supabaseUrl,
