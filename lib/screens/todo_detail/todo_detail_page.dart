@@ -217,6 +217,7 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
                     onConfirm: (DateTime time) {
                       vmRead.onChangedDate(time);
                       dateEditing.text = AppFormat().dateFormat(time);
+                      timeEditing.text = AppFormat().timeFormat(time);
                     },
                     currentTime: vmWatch.draftTodo.dateTime,
                   );
@@ -253,6 +254,7 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
                     showTitleActions: true,
                     onConfirm: (DateTime time) {
                       vmRead.onChangedDate(time);
+                      dateEditing.text = AppFormat().dateFormat(time);
                       timeEditing.text = AppFormat().timeFormat(time);
                     },
                     currentTime: vmWatch.draftTodo.dateTime,

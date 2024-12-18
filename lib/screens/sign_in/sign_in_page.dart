@@ -28,7 +28,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         child: Center(
           child: ElevatedButton(
             onPressed: () {
-              vmRead.onClickSignInWithGoogle();
+              vmRead.onClickSignInWithGoogle(context);
             },
             child: const Text("login"),
           ),
