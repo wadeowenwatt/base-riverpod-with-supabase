@@ -8,4 +8,10 @@ class AppFormat {
   String timeFormat(DateTime time) {
     return DateFormat("HH:mm").format(time);
   }
+
+  String formatDateTimeToPlus7Offset(DateTime? dateTime) {
+    String? iso8601 = dateTime?.toIso8601String();
+    iso8601 = "${iso8601?.split(".")[0]}+07";
+    return iso8601;
+  }
 }

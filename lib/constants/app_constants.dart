@@ -7,4 +7,5 @@ class AppConstants {
 
   // Shared preference key
   static const String udid = 'udid';
+  static const String accessToken = 'accessToken';
 }

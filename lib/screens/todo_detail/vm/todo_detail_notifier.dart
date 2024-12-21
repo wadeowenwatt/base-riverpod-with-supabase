@@ -83,6 +83,4 @@ class TodoDetailNotifier extends StateNotifier<TodoDetailState> {
       loadState: LoadState.Successed,
     );
   }
-
-
 }

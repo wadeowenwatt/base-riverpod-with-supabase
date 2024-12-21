@@ -30,7 +30,6 @@ class TodoService {
           result.add(TodoEntity.fromJson(json));
         }
       }
-      print(result.length);
       return result;
     } catch (e) {
       debugPrint("Fetch todo error: $e");
