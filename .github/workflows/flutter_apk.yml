@@ -28,6 +28,7 @@ jobs:
         uses: actions/setup-java@v4.6.0
         with:
           java-version: 1.8
+          distribution: 'oracle'
 
       - run: flutter pub get
       - name: build apk
