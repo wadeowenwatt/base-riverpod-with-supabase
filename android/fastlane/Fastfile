@@ -22,8 +22,8 @@ platform :android do
       # build_android_app is a built-in fastlane action.
       firebase_app_distribution(
         app: "1:227273604675:android:72d212e446bf368644def6",
-        android_artifact_path: "../build/app/outputs/flutter-apk/app-release.apk"
-        firebase_cli_token: "1//0eddHy3cWAxoPCgYIARAAGA4SNwF-L9IrDB825Sb9UzDSYC0XZ8Yyy2zsw71FonnG5MhdcJcyIBof28GlWsRT0bcPJu_s2fMhcHk"
+        android_artifact_path: "../build/app/outputs/flutter-apk/app-release.apk",
+        firebase_cli_token: "1//0eddHy3cWAxoPCgYIARAAGA4SNwF-L9IrDB825Sb9UzDSYC0XZ8Yyy2zsw71FonnG5MhdcJcyIBof28GlWsRT0bcPJu_s2fMhcHk",
         groups: "testers"
       )
   end
