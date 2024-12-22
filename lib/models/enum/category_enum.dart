@@ -28,4 +28,17 @@ extension CategoryExtension on CategoryEnum {
         return 2;
     }
   }
+
+  static CategoryEnum getTypeFromId(int id) {
+    switch (id) {
+      case 0:
+        return CategoryEnum.TASK;
+      case 1:
+        return CategoryEnum.GOAL;
+      case 2:
+        return CategoryEnum.EVEN;
+      default:
+        throw 'Not found category type';
+    }
+  }
 }

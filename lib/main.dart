@@ -22,13 +22,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  final notificationSettings =
-      await FirebaseMessaging.instance.requestPermission(provisional: true);
-  final token = await FirebaseMessaging.instance.getToken();
-  print(">>> $token");
-
-  final newId = await FirebaseInstallations.instance.getId();
-  print(">>> fid: $newId");
   /// Supabase
   await Supabase.initialize(
     url: Env.supabaseUrl,
@@ -49,11 +42,11 @@ Future saveUdid() async {
   final deviceInfo = DeviceInfoPlugin();
   if (Platform.isAndroid) {
     final androidInfo = await deviceInfo.androidInfo;
-    await SharedPreference.setUDID(androidInfo.id); // UDID cho Android
+    await SharedPreference.setUDID(androidInfo.id); // UDID for Android
   } else if (Platform.isIOS) {
     final iosInfo = await deviceInfo.iosInfo;
     await SharedPreference.setUDID(
-        iosInfo.identifierForVendor ?? 'unknown'); // UDID cho iOS
+        iosInfo.identifierForVendor ?? 'unknown'); // UDID for iOS
   }
 }
 

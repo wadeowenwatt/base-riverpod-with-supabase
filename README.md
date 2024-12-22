@@ -17,3 +17,4 @@ samples, guidance on mobile development, and a full API reference.
 
 For running generate some package like: model freezer, multi language package intl:
 - flutter packages pub run build_runner build --delete-conflicting-outputs
+- test: db pass: Linhtn1@nws

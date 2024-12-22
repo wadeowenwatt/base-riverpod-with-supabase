@@ -1,0 +1,100 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Build app and deploy to distribution
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-android:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Install Flutter"
+        run: git clone https://github.com/flutter/flutter.git --depth 1 -b 3.19.5 "$GITHUB_WORKSPACE/_flutter"
+
+      - name: "Set enviroment variable"
+        run: echo "$GITHUB_WORKSPACE/_flutter/bin" >> $GITHUB_PATH
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+
+      # # Generate key.properties => Using this for deploy store
+      # - name: "Setup Keystore File"
+      #   run: |
+      #     echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/key_gen_frombase64.jks
+
+      # - name: "Setup key.properties"
+      #   run: |
+      #     echo "storePassword=${{ secrets.STORE_PASSWORD }}" > android/key.properties
+      #     echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+      #     echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+      #     echo "storeFile=key_gen_frombase64.jks" >> android/key.properties
+
+      # - name: "Debug key.properties"
+      #   run: cat android/key.properties
+
+      # Setup Environment Variables => Using this for create .env file, having some private attribute like API_KEY,...
+      - name: "Create .env file"
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: "Debug .env file"
+        run: cat .env
+
+
+      - run: flutter pub get
+      - name: "Build apk"
+        run: flutter build apk
+
+      # Upload the APK as an Artifact
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+        
+      # Using this if use target building on ubuntu and only build APK
+      # It's not working in run-on macos, config run deploy by fastlane insteads.
+      # - name: "Deploy to distribution"
+      #   uses: wzieba/Firebase-Distribution-Github-Action@v1.7.0
+      #   with:
+      #     appId: ${{secrets.FIREBASE_APP_ID}}
+      #     serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
+      #     groups: testers
+      #     file: build\app\outputs\flutter-apk\app-release.apk
+      
+      # Set up Ruby environment
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.6'
+          bundler-cache: true
+
+      - name: "Install Fastlane"
+        run: sudo gem install fastlane
+
+      - name: "Initialize fastlane for android"
+        working-directory: android
+        run: fastlane add_plugin firebase_app_distribution
+      
+      # - name: "Initialize fastlane for iOS"
+      #   working-directory: ios
+      #   run: fastlane add_plugin firebase_app_distribution
+
+      - name: "Deploy to firebase distribution"
+        run: |
+            cd android 
+            fastlane distribute

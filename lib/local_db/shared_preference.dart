@@ -12,4 +12,14 @@ class SharedPreference {
     return prefs.getString(AppConstants.udid);
   }
 
+  static Future<void> setAccessToken(String accessToken) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.accessToken, accessToken);
+  }
+
+  static Future<String?> getAccessToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(AppConstants.accessToken);
+  }
+
 }
