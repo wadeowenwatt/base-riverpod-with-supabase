@@ -19,7 +19,6 @@ platform :android do
 
   desc "Note app distribute"
   lane :distribute do
-      build_android_app(...)
       # build_android_app is a built-in fastlane action.
       firebase_app_distribution(
         app: "1:227273604675:android:72d212e446bf368644def6",
