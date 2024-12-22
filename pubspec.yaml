@@ -62,6 +62,7 @@ dependencies:
 
   # UI
   flutter_datetime_picker_plus: ^2.2.0
+  flutter_launcher_icons: ^0.14.2
 
 dev_dependencies:
   flutter_test:
