@@ -97,4 +97,4 @@ jobs:
       - name: "Deploy to firebase distribution"
         run: |
             cd android 
-            fastlane distribution
+            fastlane distribute
