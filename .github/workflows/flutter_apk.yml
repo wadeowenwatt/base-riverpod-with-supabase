@@ -59,12 +59,14 @@ jobs:
         run: flutter build apk
 
       # Upload the APK as an Artifact
-      - name: Upload APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+      # Artifacts allow you to share data between jobs in a workflow and store data once that workflow has completed.
+      # It use for step deploy attribution
+      # - name: Upload APK
+      #   if: success()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: release-apk
+      #     path: build/app/outputs/flutter-apk/app-release.apk
         
       # Using this if use target building on ubuntu and only build APK
       # It's not working in run-on macos, config run deploy by fastlane insteads.
