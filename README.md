@@ -13,4 +13,4 @@ For running generate some package like: model freezer, multi language package in
 - This base's using Supabase
 - This base has config firebase include Firebase Auth, Firebase Messaging, Firebase Distribute
 - This base has CI/CD config using Github Action and Firebase Distribute
-- More and more you can read in code and you can fetch this like a open source to maintain and using 
+- More and more you can read in code and you can fork this like a open source to maintain and using 
